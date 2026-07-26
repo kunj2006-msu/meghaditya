@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Sun, ArrowLeft, Loader2, Sparkles, AlertCircle, Calendar, BarChart3, Zap, ShieldCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Sun, ArrowLeft, Loader2, Sparkles, AlertCircle, Calendar, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageBackground from '../components/PageBackground';
 import Navbar from '../components/Navbar';
@@ -7,7 +7,8 @@ import LocationSearch from '../components/LocationSearch';
 import ResultCard from '../components/ResultCard';
 import SubsidyPanel from '../components/SubsidyPanel';
 import solarScene from '../assets/solar-scene.png';
-import { API_BASE_URL } from '../config';
+import api from '../api';
+import useApiRequest from '../hooks/useApiRequest';
 
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -23,70 +24,61 @@ export default function SolarDashboard() {
   const [roofArea, setRoofArea] = useState('120');
 
   // Async API states
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [localError, setLocalError] = useState(null);
   const [assessmentResult, setAssessmentResult] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
+
+  // Cold-start resilient API hook for solar assessment
+  const { loading: isSubmitting, slowLoadMessage, error: apiError, request: executeRequest } = useApiRequest();
 
   // Monthly Solar Data state
   const [monthlyData, setMonthlyData] = useState(null);
   const [isMonthlyLoading, setIsMonthlyLoading] = useState(false);
 
+  const displayError = localError || apiError;
+
   // Submit Solar Assessment
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!selectedLocation) {
-      setErrorMessage('Please select a district location from the search bar.');
+      setLocalError('Please select a district location from the search bar.');
       return;
     }
 
     const areaNum = parseFloat(roofArea);
     if (isNaN(areaNum) || areaNum <= 0) {
-      setErrorMessage('Please enter a valid positive rooftop area (m²).');
+      setLocalError('Please enter a valid positive rooftop area (m²).');
       return;
     }
 
-    setIsSubmitting(true);
-    setErrorMessage(null);
+    setLocalError(null);
 
     try {
-      // 1. Post Solar Assessment Request
+      // 1. Post Solar Assessment Request via useApiRequest hook
       const payload = {
         location_id: selectedLocation.location_id,
         roof_area_m2: areaNum,
       };
 
-      const response = await fetch(`${API_BASE_URL}/assess/solar`, {
+      const data = await executeRequest({
+        url: '/assess/solar',
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        data: payload,
       });
 
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.detail || `Assessment failed (${response.status})`);
-      }
-
-      const data = await response.json();
       setAssessmentResult(data);
 
       // 2. Fetch 12-Month Solar Breakdown
       fetchMonthlyData(selectedLocation.location_id);
     } catch (err) {
-      console.error('Solar assessment error:', err);
-      setErrorMessage(err.message || 'Failed to complete solar assessment. Check backend API connection.');
-    } finally {
-      setIsSubmitting(false);
+      // Error handled by hook
     }
   };
 
   const fetchMonthlyData = async (locId) => {
     setIsMonthlyLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/locations/${locId}/solar-monthly`);
-      if (res.ok) {
-        const mData = await res.json();
-        setMonthlyData(mData);
-      }
+      const res = await api.get(`/locations/${locId}/solar-monthly`);
+      setMonthlyData(res.data);
     } catch (err) {
       console.error('Failed to fetch monthly solar irradiance:', err);
     } finally {
@@ -144,12 +136,12 @@ export default function SolarDashboard() {
               <h2 className="text-lg font-bold text-white mb-1">Solar Inputs</h2>
               <p className="text-xs text-slate-300 mb-6">Enter available unshaded rooftop area to model solar array output.</p>
 
-              {errorMessage && (
+              {displayError && (
                 <div className="mb-6 p-4 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-start gap-3 shadow-md">
                   <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
                   <div>
                     <strong className="block font-semibold">Error</strong>
-                    <span>{errorMessage}</span>
+                    <span>{displayError}</span>
                   </div>
                 </div>
               )}
@@ -160,7 +152,7 @@ export default function SolarDashboard() {
                   selectedLocation={selectedLocation}
                   onSelectLocation={(loc) => {
                     setSelectedLocation(loc);
-                    setErrorMessage(null);
+                    setLocalError(null);
                   }}
                 />
 
@@ -189,24 +181,36 @@ export default function SolarDashboard() {
                   </span>
                 </div>
 
-                {/* Submit CTA Button (Warm Amber Opaque Fill) */}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/30 border border-amber-300/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
-                      <span>Simulating Solar Irradiance...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sun className="w-5 h-5 text-slate-950" />
-                      <span>Assess Solar Potential</span>
-                    </>
+                {/* Submit CTA Button & Cold-Start Notice */}
+                <div>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/30 border border-amber-300/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin text-slate-950" />
+                        <span>Simulating Solar Irradiance...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sun className="w-5 h-5 text-slate-950" />
+                        <span>Assess Solar Potential</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Cold-start notification after 4s pending delay */}
+                  {isSubmitting && slowLoadMessage && (
+                    <div className="mt-3 p-3 rounded-lg bg-amber-950/80 border border-amber-500/40 text-amber-200 text-xs flex items-start gap-2.5 animate-fadeIn shadow-md">
+                      <Loader2 className="w-4 h-4 shrink-0 animate-spin text-amber-400 mt-0.5" />
+                      <span>
+                        Waking up the server - this can take up to a minute on the very first request. Subsequent requests will be instant.
+                      </span>
+                    </div>
                   )}
-                </button>
+                </div>
               </form>
             </div>
           </div>
