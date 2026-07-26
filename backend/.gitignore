@@ -1,6 +1,24 @@
-venv/
+# Environments & Secrets
 .env
+.env.*
+venv/
+.venv/
+env/
+ENV/
+
+# Python Cache & Compiled Files
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+htmlcov/
 
-
+# IDE & OS Metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db

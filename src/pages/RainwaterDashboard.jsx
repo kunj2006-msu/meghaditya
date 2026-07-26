@@ -1,0 +1,257 @@
+import React, { useState } from 'react';
+import { Droplets, ArrowLeft, Loader2, Sparkles, AlertCircle, Info, Home, Users } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import PageBackground from '../components/PageBackground';
+import Navbar from '../components/Navbar';
+import LocationSearch from '../components/LocationSearch';
+import ResultCard from '../components/ResultCard';
+import SubsidyPanel from '../components/SubsidyPanel';
+import rainScene from '../assets/rain-scene.png';
+import { API_BASE_URL } from '../config';
+
+/**
+ * RainwaterDashboard View
+ * Rendered with rainScene image background static (motion=false)
+ */
+export default function RainwaterDashboard() {
+  const navigate = useNavigate();
+
+  // Form State
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [roofArea, setRoofArea] = useState('120');
+  const [roofType, setRoofType] = useState('rcc');
+  const [householdSize, setHouseholdSize] = useState('4');
+
+  // Async API states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [assessmentResult, setAssessmentResult] = useState(null);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedLocation) {
+      setErrorMessage('Please select a district location from the search bar.');
+      return;
+    }
+
+    const areaNum = parseFloat(roofArea);
+    if (isNaN(areaNum) || areaNum <= 0) {
+      setErrorMessage('Please enter a valid positive roof area (m²).');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage(null);
+
+    try {
+      const payload = {
+        location_id: selectedLocation.location_id,
+        roof_area_m2: areaNum,
+        roof_type: roofType,
+        household_size: parseInt(householdSize, 10) || 4,
+      };
+
+      const response = await fetch(`${API_BASE_URL}/assess/rainwater`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.detail || `Assessment request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      setAssessmentResult(data);
+    } catch (err) {
+      console.error('Rainwater assessment error:', err);
+      setErrorMessage(err.message || 'Failed to complete rainwater assessment. Make sure backend service is running.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <PageBackground image={rainScene} motion={false} overlayOpacity={0.35}>
+      <Navbar />
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+        {/* Header Breadcrumb & Title */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+          <div>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-300 hover:text-white mb-2 transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Home</span>
+            </button>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-white flex items-center gap-3">
+              <Droplets className="w-8 h-8 text-sky-400" />
+              <span>Rainwater Harvesting Potential</span>
+            </h1>
+            <p className="text-sm text-slate-300 mt-1">
+              Calculate annual rainwater capture capacity and storage tank sizing based on IMD precipitation datasets.
+            </p>
+          </div>
+
+          <div className="shrink-0">
+            <button
+              type="button"
+              onClick={() => navigate('/solar')}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/20 border border-amber-400/40 text-amber-300 hover:bg-amber-500/30 text-xs font-bold transition-all shadow-md"
+            >
+              <span>Switch to Solar Assessment</span>
+              <Sparkles className="w-4 h-4 text-amber-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Responsive Grid: Mobile single column, Tablet/Desktop Side-by-Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column (5 Cols): Form Input Panel */}
+          <div className="lg:col-span-5 flex flex-col gap-6">
+            <div className="glass-panel glass-blur rounded-2xl p-6 md:p-8 shadow-2xl border border-white/20">
+              <h2 className="text-lg font-bold text-white mb-1">Assessment Inputs</h2>
+              <p className="text-xs text-slate-300 mb-6">Enter your rooftop specifications to simulate harvestable runoff.</p>
+
+              {errorMessage && (
+                <div className="mb-6 p-4 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-start gap-3 shadow-md">
+                  <AlertCircle className="w-5 h-5 shrink-0 text-rose-400 mt-0.5" />
+                  <div>
+                    <strong className="block font-semibold">Error</strong>
+                    <span>{errorMessage}</span>
+                  </div>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {/* 1. Location Autocomplete */}
+                <LocationSearch
+                  selectedLocation={selectedLocation}
+                  onSelectLocation={(loc) => {
+                    setSelectedLocation(loc);
+                    setErrorMessage(null);
+                  }}
+                />
+
+                {/* 2. Roof Area Input */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Roof Catchment Area (m²) <span className="text-rose-400">*</span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min="1"
+                      step="any"
+                      required
+                      value={roofArea}
+                      onChange={(e) => setRoofArea(e.target.value)}
+                      placeholder="e.g. 120"
+                      className="w-full pl-3.5 pr-12 py-2.5 text-sm bg-slate-900/90 border border-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-inner font-semibold"
+                    />
+                    <span className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-xs font-bold text-slate-400 pointer-events-none">
+                      m²
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    ≈ {(parseFloat(roofArea) * 10.764 || 0).toFixed(0)} sq. ft.
+                  </span>
+                </div>
+
+                {/* 3. Roof Surface Type Dropdown */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Roof Surface Type <span className="text-rose-400">*</span>
+                  </label>
+                  <select
+                    value={roofType}
+                    onChange={(e) => setRoofType(e.target.value)}
+                    className="w-full px-3.5 py-2.5 text-sm bg-slate-900/90 border border-slate-700 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-inner font-semibold"
+                  >
+                    <option value="rcc">RCC Concrete Flat Roof (Runoff Coeff. 0.85)</option>
+                    <option value="tiled">Tiled / Sloped Sheet Roof (Runoff Coeff. 0.75)</option>
+                    <option value="green">Green / Turf Eco Roof (Runoff Coeff. 0.50)</option>
+                  </select>
+                </div>
+
+                {/* 4. Optional Household Size */}
+                <div>
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                    Household Occupants (Optional)
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <input
+                      type="number"
+                      min="1"
+                      value={householdSize}
+                      onChange={(e) => setHouseholdSize(e.target.value)}
+                      placeholder="e.g. 4 occupants"
+                      className="w-full pl-10 pr-3.5 py-2.5 text-sm bg-slate-900/90 border border-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-inner font-semibold"
+                    />
+                  </div>
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Used to estimate domestic water requirement buffers.
+                  </span>
+                </div>
+
+                {/* Submit CTA Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-3.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm shadow-xl shadow-sky-600/30 border border-sky-400/40 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>Calculating Rainwater Yield...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Droplets className="w-5 h-5 text-sky-200" />
+                      <span>Assess Rainwater Potential</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Right Column (7 Cols): Results & Subsidies */}
+          <div className="lg:col-span-7 flex flex-col gap-6">
+            {/* Assessment Result Card */}
+            {assessmentResult ? (
+              <ResultCard
+                type="rainwater"
+                result={assessmentResult}
+                locationInfo={selectedLocation}
+              />
+            ) : (
+              <div className="glass-panel glass-blur rounded-2xl p-8 text-center border border-white/20 flex flex-col items-center justify-center min-h-[260px]">
+                <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-400/20 text-sky-400 mb-3">
+                  <Droplets className="w-10 h-10 animate-pulse" />
+                </div>
+                <h3 className="text-lg font-bold text-white">Ready for Rainwater Assessment</h3>
+                <p className="text-xs text-slate-300 max-w-sm mt-1">
+                  Select your district location and roof area on the left form to calculate your annual harvestable rainwater liters.
+                </p>
+              </div>
+            )}
+
+            {/* Subsidies Panel */}
+            <SubsidyPanel
+              type="rainwater"
+              state={selectedLocation ? selectedLocation.state : ''}
+            />
+          </div>
+        </div>
+      </main>
+    </PageBackground>
+  );
+}
