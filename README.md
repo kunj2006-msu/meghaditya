@@ -53,8 +53,8 @@ India has 700+ districts, each with wildly different rainfall and sunlight profi
 ![Rooftop Solar Energy Potential](src/assets/solar-dashboard-preview.png)
 
 ### 📄 Assessment PDF Report Downloads (Examples)
-- 💧 **Rainwater Assessment Report (PDF)**:(src/assets/megaditya-rainwater-report.pdf)
-- ☀️ **Solar Potential Assessment Report (PDF)**:(src/assets/megaditya-solar-report.pdf)
+- 💧 [**Download Example Rainwater Assessment Report (PDF)**](src/assets/meghaditya-rainwater-report.pdf)
+- ☀️ [**Download Example Solar Potential Assessment Report (PDF)**](src/assets/meghaditya-solar-report.pdf)
 
 ---
 
