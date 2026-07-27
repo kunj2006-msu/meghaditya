@@ -38,6 +38,7 @@ India has 700+ districts, each with wildly different rainfall and sunlight profi
 | ☀️ **Rooftop Solar Potential** | Estimates recommended PV system size (kWp), annual clean energy generation (kWh), projected utility bill savings (₹/year), and annual CO₂ emissions avoided. |
 | 📊 **12-Month Generation Curve** | Interactive monthly solar irradiance breakdown (GHI, kWh/m²/day) so you can see *when* in the year your system performs best — not just a flat annual average. |
 | 📜 **State Subsidy & Policy Finder** | Surfaces real, region-specific government incentive schemes (e.g. PM Surya Ghar Muft Bijli Yojana) and helpline numbers for both solar and rainwater harvesting — because knowing your potential is only half the picture. |
+| 📄 **Branded PDF Report Export** | Server-side generated vector PDF reports (ReportLab) for both Rainwater and Solar assessments — featuring custom brand styling, metric callout boxes, 12-month solar irradiance bar charts, and clickable government portal links. |
 | 🔍 **700+ District Search** | Full autocomplete coverage across every Indian state and union territory, with a state-level fallback for districts where fine-grained data isn't available. |
 | ✨ **Dual-Theme Immersive UI** | Every dashboard visually transforms — cool, rain-drenched tones for the water assessment, warm golden light for the solar assessment — reinforcing what you're actually calculating. |
 
@@ -50,6 +51,10 @@ India has 700+ districts, each with wildly different rainfall and sunlight profi
 
 ### ☀️ Rooftop Solar Energy Potential Dashboard
 ![Rooftop Solar Energy Potential](src/assets/solar-dashboard-preview.png)
+
+### 📄 Assessment PDF Report Downloads (Examples)
+- 💧 **Rainwater Assessment Report (PDF)**: `[Link / Preview Placeholder - Add example rainwater PDF file here]`
+- ☀️ **Solar Potential Assessment Report (PDF)**: `[Link / Preview Placeholder - Add example solar PDF file here]`
 
 ---
 
@@ -79,11 +84,12 @@ This means every result is explainable and auditable — exactly what you'd want
 - **React 18** (Vite 6) — component architecture & fast dev server
 - **Tailwind CSS 3** + vanilla CSS keyframes — glassmorphic design system, staggered entrance animations
 - **React Router DOM v6** — client-side routing between landing page and dashboards
-- **Axios** — centralized API layer with extended timeout handling for cold-start resilience
+- **Axios** — centralized API layer with extended timeout handling for cold-start resilience & blob handling for PDF downloads
 - **Lucide React** — icon system
 
 ### Backend
 - **FastAPI** (Python 3.10+) — async-ready REST API
+- **ReportLab** — server-side vector PDF document engine & chart drawing
 - **SQLAlchemy ORM** + **PostgreSQL (Supabase)** — relational data layer across 700+ districts
 - **Pydantic v2** — request/response validation
 - **Uvicorn** — ASGI server
@@ -111,8 +117,8 @@ meghaditya/
 │   │   └── useApiRequest.js        # Centralized fetch hook w/ cold-start-aware messaging
 │   ├── pages/
 │   │   ├── LandingPage.jsx         # Staged entrance hero + dual dashboard entry
-│   │   ├── RainwaterDashboard.jsx  # Rainwater assessment workspace
-│   │   └── SolarDashboard.jsx      # Solar assessment workspace
+│   │   ├── RainwaterDashboard.jsx  # Rainwater assessment workspace (with PDF export)
+│   │   └── SolarDashboard.jsx      # Solar assessment workspace (with PDF export)
 │   ├── App.jsx                     # Root app + router
 │   └── config.js                   # API_BASE_URL configuration
 │
@@ -121,9 +127,10 @@ meghaditya/
 │   │   ├── models.py               # SQLAlchemy schemas
 │   │   ├── schemas.py              # Pydantic request/response models
 │   │   ├── crud.py                 # Query logic + calculation formulas
+│   │   ├── pdf_generator.py        # ReportLab vector PDF generator & bar chart drawing
 │   │   ├── database.py             # DB session/connection management
 │   │   ├── main.py                 # App init, CORS, router registration
-│   │   └── routers/                # /assess, /locations, /subsidies endpoints
+│   │   └── routers/                # /assess, /export/pdf, /locations, /subsidies endpoints
 │   └── requirements.txt
 │
 ├── package.json
@@ -191,6 +198,8 @@ App runs at `http://localhost:5173`.
 | `/locations/search?q={query}` | GET | Autocomplete search across state/district names |
 | `/assess/rainwater` | POST | Rainwater harvesting calculation for a given location + roof spec |
 | `/assess/solar` | POST | Solar potential calculation for a given location + roof area |
+| `/export/pdf/rainwater` | POST | Generate and stream branded vector PDF report for rainwater harvesting |
+| `/export/pdf/solar` | POST | Generate and stream branded vector PDF report for rooftop solar potential |
 | `/locations/{location_id}/solar-monthly` | GET | 12-month irradiance breakdown for the solar generation chart |
 | `/subsidies?type={rainwater\|solar}&state={state}` | GET | Government scheme & helpline directory |
 | `/health` | GET | Lightweight health check (used for cold-start warm-up pings) |
@@ -211,7 +220,7 @@ Full interactive documentation is auto-generated via FastAPI at `/docs`.
 ## 🗺️ Roadmap
 
 - [ ] Add historical rainfall trend visualization (multi-year, not just annual average)
-- [ ] Add PDF export of assessment reports
+- [x] Add PDF export of assessment reports (server-side vector generation via ReportLab)
 - [ ] Support multi-roof / multi-building batch assessments
 - [ ] Localization (Hindi + regional language support)
 
