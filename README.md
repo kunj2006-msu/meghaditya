@@ -13,7 +13,7 @@
 [![Vite](https://img.shields.io/badge/Vite-6-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Live Demo](#) · [Report a Bug](#) · [Request a Feature](#)
+[Live Demo](https://meghaditya.vercel.app/) · [Report a Bug](https://github.com/kunj2006-msu/meghaditya/issues) · [Request a Feature](https://github.com/kunj2006-msu/meghaditya/issues)
 
 </div>
 
@@ -219,7 +219,7 @@ Full interactive documentation is auto-generated via FastAPI at `/docs`.
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](#) or open a pull request.
+Contributions, issues, and feature requests are welcome. Feel free to check the [issues page](https://github.com/kunj2006-msu/meghaditya/issues) or open a pull request.
 
 ---
 
