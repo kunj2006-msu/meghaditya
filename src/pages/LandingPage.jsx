@@ -70,7 +70,7 @@ export default function LandingPage() {
               )}
             >
               <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Official IMD Rainfall &amp; ISRO Solar Irradiance Data</span>
+              <span>District-wise Rainfall &amp; NITI Aayog Solar Irradiance Data</span>
             </div>
 
             {/* Wordmark Title */}

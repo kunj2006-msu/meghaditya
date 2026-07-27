@@ -148,7 +148,7 @@ export default function ResultCard({ type = 'rainwater', result, locationInfo })
             <div className="col-span-2 sm:col-span-1 bg-slate-900/40 p-2.5 rounded-lg border border-slate-800">
               <span className="text-slate-400 block">Location Verified</span>
               <span className="font-semibold text-emerald-400 text-sm flex items-center gap-1">
-                <ShieldCheck className="w-3.5 h-3.5" /> Official IMD Data
+                <ShieldCheck className="w-3.5 h-3.5" /> District-wise Rainfall
               </span>
             </div>
           </>

@@ -69,7 +69,7 @@ export default function LocationSearch({ onSelectLocation, selectedLocation = nu
   };
 
   return (
-    <div className={`relative w-full ${className}`} ref={dropdownRef}>
+    <div className={`relative w-full ${isOpen ? 'z-50' : 'z-30'} ${className}`} ref={dropdownRef}>
       <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
         Location (District & State) <span className="text-rose-400">*</span>
       </label>
@@ -97,7 +97,7 @@ export default function LocationSearch({ onSelectLocation, selectedLocation = nu
         </div>
       ) : (
         // Search Input View
-        <div className="relative">
+        <div className="relative z-50">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4 h-4" />
           </div>
@@ -115,7 +115,7 @@ export default function LocationSearch({ onSelectLocation, selectedLocation = nu
             className="w-full pl-10 pr-10 py-2.5 text-sm bg-slate-900/90 border border-slate-700 text-white placeholder-slate-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 shadow-inner transition-all"
           />
 
-          <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+          <div className="absolute inset-y-0 right-0 pr-3 flex items-center z-10">
             {isLoading ? (
               <Loader2 className="w-4 h-4 text-sky-400 animate-spin" />
             ) : query ? (
@@ -131,7 +131,7 @@ export default function LocationSearch({ onSelectLocation, selectedLocation = nu
 
           {/* Autocomplete Dropdown */}
           {isOpen && (
-            <div className="absolute z-50 mt-1.5 w-full bg-slate-900 border border-slate-700 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
+            <div className="absolute left-0 right-0 top-full z-50 mt-1.5 w-full bg-slate-900 border border-slate-700 rounded-lg shadow-2xl overflow-hidden max-h-60 overflow-y-auto">
               {error && (
                 <div className="p-3 text-xs text-rose-400 bg-rose-950/40">
                   {error}

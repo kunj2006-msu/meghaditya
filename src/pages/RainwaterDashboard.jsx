@@ -97,10 +97,12 @@ export default function RainwaterDashboard() {
 
   // Form field stagger helper (optional polish: subtle quick stagger)
   const fieldStage = (index) => {
-    if (!shouldAnimate) return {};
+    const zIndexes = ['z-40', 'z-30', 'z-20', 'z-10', 'z-0'];
+    const zClass = `relative ${zIndexes[index] || 'z-0'}`;
+    if (!shouldAnimate) return { className: zClass };
     const delay = `${0.5 + index * 0.06}s`;
     return {
-      className: 'anim-stage-reveal',
+      className: `anim-stage-reveal ${zClass}`,
       style: { animation: `stageReveal 0.3s ${EASING} ${delay} both` },
     };
   };
@@ -140,7 +142,7 @@ export default function RainwaterDashboard() {
               <span>Rainwater Harvesting Potential</span>
             </h1>
             <p className="text-sm text-slate-300 mt-1">
-              Calculate annual rainwater capture capacity and storage tank sizing based on IMD precipitation datasets.
+              Calculate annual rainwater capture capacity and storage tank sizing based on District-wise Rainfall.
             </p>
           </div>
 

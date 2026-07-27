@@ -121,10 +121,12 @@ export default function SolarDashboard() {
 
   // Form field stagger helper (optional polish: subtle quick stagger)
   const fieldStage = (index) => {
-    if (!shouldAnimate) return {};
+    const zIndexes = ['z-40', 'z-30', 'z-20', 'z-10', 'z-0'];
+    const zClass = `relative ${zIndexes[index] || 'z-0'}`;
+    if (!shouldAnimate) return { className: zClass };
     const delay = `${0.5 + index * 0.06}s`;
     return {
-      className: 'anim-stage-reveal',
+      className: `anim-stage-reveal ${zClass}`,
       style: { animation: `stageReveal 0.3s ${EASING} ${delay} both` },
     };
   };
@@ -164,7 +166,7 @@ export default function SolarDashboard() {
               <span>Rooftop Solar Energy Potential</span>
             </h1>
             <p className="text-sm text-slate-300 mt-1">
-              Estimate rooftop PV system capacity (kWp) and monthly energy yield based on NIWE solar radiation maps.
+              Estimate rooftop PV system capacity (kWp) and monthly energy yield based on NITI Aayog Solar Irradiance Data.
             </p>
           </div>
 
