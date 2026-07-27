@@ -45,7 +45,11 @@ India has 700+ districts, each with wildly different rainfall and sunlight profi
 
 ## 🎬 What It Looks Like
 
-> *Add 2-3 screenshots or a short screen recording here — the landing page, and one result from each dashboard, make the strongest first impression.*
+### 💧 Rainwater Harvesting Assessment Dashboard
+![Rainwater Harvesting Assessment](src/assets/rainwater-dashboard-preview.png)
+
+### ☀️ Rooftop Solar Energy Potential Dashboard
+![Rooftop Solar Energy Potential](src/assets/solar-dashboard-preview.png)
 
 ---
 
