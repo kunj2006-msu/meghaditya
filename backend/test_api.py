@@ -114,6 +114,40 @@ def test_nonexistent_location_404():
     assert response.status_code == 404
 
 
+def test_export_rainwater_pdf():
+    search_res = client.get("/locations/search?q=maharashtra")
+    locations = search_res.json()
+    loc_id = locations[0]["location_id"] if locations else 1
+
+    payload = {
+        "location_id": loc_id,
+        "roof_area_m2": 120.0,
+        "roof_type": "rcc",
+        "household_size": 4,
+    }
+    response = client.post("/export/pdf/rainwater", json=payload)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "meghaditya-rainwater-report.pdf" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF-")
+
+
+def test_export_solar_pdf():
+    search_res = client.get("/locations/search?q=maharashtra")
+    locations = search_res.json()
+    loc_id = locations[0]["location_id"] if locations else 1
+
+    payload = {
+        "location_id": loc_id,
+        "roof_area_m2": 120.0,
+    }
+    response = client.post("/export/pdf/solar", json=payload)
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "application/pdf"
+    assert "meghaditya-solar-report.pdf" in response.headers["content-disposition"]
+    assert response.content.startswith(b"%PDF-")
+
+
 if __name__ == "__main__":
     test_root()
     test_locations_search()
@@ -122,6 +156,8 @@ if __name__ == "__main__":
     test_solar_monthly()
     test_subsidies()
     test_assess_summary()
+    test_export_rainwater_pdf()
+    test_export_solar_pdf()
     test_invalid_input_422()
     test_nonexistent_location_404()
     print("ALL API INTEGRATION TESTS PASSED SUCCESSFULLY!")

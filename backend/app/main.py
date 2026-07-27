@@ -6,7 +6,7 @@ Includes CORS configuration, database initialization, and router registration.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base, SessionLocal
-from app.routers import locations, rainwater, solar, subsidies, summary
+from app.routers import export, locations, rainwater, solar, subsidies, summary
 import app.crud as crud
 
 # Initialize FastAPI application
@@ -48,6 +48,7 @@ app.include_router(rainwater.router)
 app.include_router(solar.router)
 app.include_router(subsidies.router)
 app.include_router(summary.router)
+app.include_router(export.router)
 
 
 @app.get("/", tags=["Health Check"])

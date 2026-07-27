@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Droplets, ArrowLeft, Loader2, Sparkles, AlertCircle, Users } from 'lucide-react';
+import { Droplets, ArrowLeft, Loader2, Sparkles, AlertCircle, Users, Download, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import PageBackground from '../components/PageBackground';
 import Navbar from '../components/Navbar';
@@ -7,6 +7,7 @@ import LocationSearch from '../components/LocationSearch';
 import ResultCard from '../components/ResultCard';
 import SubsidyPanel from '../components/SubsidyPanel';
 import rainScene from '../assets/rain-scene.png';
+import api from '../api';
 import useApiRequest from '../hooks/useApiRequest';
 
 /**
@@ -34,6 +35,10 @@ export default function RainwaterDashboard() {
   // Async API states
   const [localError, setLocalError] = useState(null);
   const [assessmentResult, setAssessmentResult] = useState(null);
+
+  // PDF Export states
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [pdfError, setPdfError] = useState(null);
 
   // Cold-start resilient API hook
   const { loading: isSubmitting, slowLoadMessage, error: apiError, request: executeRequest } = useApiRequest();
@@ -70,8 +75,44 @@ export default function RainwaterDashboard() {
       });
 
       setAssessmentResult(data);
+      setPdfError(null);
     } catch (err) {
       // Error handled by useApiRequest
+    }
+  };
+
+  // Download Branded PDF Report
+  const handleDownloadPdf = async () => {
+    if (!selectedLocation || !assessmentResult) return;
+    setIsExportingPdf(true);
+    setPdfError(null);
+
+    try {
+      const payload = {
+        location_id: selectedLocation.location_id,
+        roof_area_m2: parseFloat(roofArea),
+        roof_type: roofType,
+        household_size: parseInt(householdSize, 10) || 4,
+      };
+
+      const response = await api.post('/export/pdf/rainwater', payload, {
+        responseType: 'blob',
+      });
+
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'meghaditya-rainwater-report.pdf');
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('PDF export failed:', err);
+      setPdfError('Failed to generate PDF report. Please try again.');
+    } finally {
+      setIsExportingPdf(false);
     }
   };
 
@@ -304,11 +345,52 @@ export default function RainwaterDashboard() {
           >
             {/* Assessment Result Card */}
             {assessmentResult ? (
-              <ResultCard
-                type="rainwater"
-                result={assessmentResult}
-                locationInfo={selectedLocation}
-              />
+              <div className="space-y-4">
+                <ResultCard
+                  type="rainwater"
+                  result={assessmentResult}
+                  locationInfo={selectedLocation}
+                />
+
+                {/* PDF Export Banner Button */}
+                <div className="glass-panel glass-blur rounded-2xl p-4 md:p-5 border border-sky-400/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+                  <div>
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <FileText className="w-4 h-4 text-sky-400" />
+                      <span>Official Assessment Report</span>
+                    </h4>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      Download a branded vector PDF report formatted for technical audits and subsidy applications.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadPdf}
+                    disabled={isExportingPdf}
+                    className="shrink-0 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold shadow-lg shadow-sky-600/30 border border-sky-400/40 transition-all flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {isExportingPdf ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin text-white" />
+                        <span>Generating PDF...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 text-sky-200" />
+                        <span>Download PDF Report</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {pdfError && (
+                  <div className="p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-200 text-xs flex items-center gap-2 shadow-md">
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>{pdfError}</span>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="glass-panel glass-blur rounded-2xl p-8 text-center border border-white/20 flex flex-col items-center justify-center min-h-[260px]">
                 <div className="p-4 rounded-2xl bg-sky-500/10 border border-sky-400/20 text-sky-400 mb-3">
