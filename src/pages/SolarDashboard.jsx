@@ -15,9 +15,18 @@ const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Se
 /**
  * SolarDashboard View
  * Rendered with solarScene image background static (motion=false)
+ * Staged entrance animation plays on every mount (~1.5s total).
  */
 export default function SolarDashboard() {
   const navigate = useNavigate();
+
+  // Determine if entrance animations should play (respects reduced motion)
+  const [shouldAnimate] = useState(() => {
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return false;
+    }
+    return true;
+  });
 
   // Form State
   const [selectedLocation, setSelectedLocation] = useState(null);
@@ -91,13 +100,56 @@ export default function SolarDashboard() {
     ? Math.max(...monthlyData.monthly_data.map(d => d.irradiance_kwh_m2_day), 6.5)
     : 7.0;
 
+  // Animation helpers — inline style drives the animation with concrete values
+  // (no CSS var() in shorthand — avoids browser parsing bug)
+  const EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+  const withStage = (existingClass, animClass, delay, duration) => {
+    if (!shouldAnimate) return { className: existingClass };
+    const keyframeMap = {
+      'anim-stage-reveal': 'stageReveal',
+      'anim-stage-reveal-from-left': 'stageRevealFromLeft',
+      'anim-stage-reveal-from-right': 'stageRevealFromRight',
+      'anim-bg-reveal': 'bgReveal',
+    };
+    const keyframeName = keyframeMap[animClass] || 'stageReveal';
+    return {
+      className: `${existingClass} ${animClass}`,
+      style: { animation: `${keyframeName} ${duration} ${EASING} ${delay} both` },
+    };
+  };
+
+  // Form field stagger helper (optional polish: subtle quick stagger)
+  const fieldStage = (index) => {
+    if (!shouldAnimate) return {};
+    const delay = `${0.5 + index * 0.06}s`;
+    return {
+      className: 'anim-stage-reveal',
+      style: { animation: `stageReveal 0.3s ${EASING} ${delay} both` },
+    };
+  };
+
   return (
-    <PageBackground image={solarScene} motion={false} overlayOpacity={0.35}>
+    <PageBackground
+      image={solarScene}
+      motion={false}
+      overlayOpacity={0.35}
+      animateEntrance={shouldAnimate}
+      entranceDelay="0s"
+      entranceDuration="0.5s"
+    >
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
         {/* Header Breadcrumb & Title */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div
+          {...withStage(
+            'flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8',
+            'anim-stage-reveal',
+            '0.2s',
+            '0.5s'
+          )}
+        >
           <div>
             <button
               type="button"
@@ -131,7 +183,14 @@ export default function SolarDashboard() {
         {/* Responsive Grid: Mobile single column, Tablet/Desktop Side-by-Side */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Left Column (5 Cols): Form Input Panel */}
-          <div className="lg:col-span-5 flex flex-col gap-6">
+          <div
+            {...withStage(
+              'lg:col-span-5 flex flex-col gap-6',
+              'anim-stage-reveal-from-left',
+              '0.3s',
+              '0.6s'
+            )}
+          >
             <div className="glass-panel glass-blur rounded-2xl p-6 md:p-8 shadow-2xl border border-white/20">
               <h2 className="text-lg font-bold text-white mb-1">Solar Inputs</h2>
               <p className="text-xs text-slate-300 mb-6">Enter available unshaded rooftop area to model solar array output.</p>
@@ -148,16 +207,18 @@ export default function SolarDashboard() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 1. Location Autocomplete */}
-                <LocationSearch
-                  selectedLocation={selectedLocation}
-                  onSelectLocation={(loc) => {
-                    setSelectedLocation(loc);
-                    setLocalError(null);
-                  }}
-                />
+                <div {...fieldStage(0)}>
+                  <LocationSearch
+                    selectedLocation={selectedLocation}
+                    onSelectLocation={(loc) => {
+                      setSelectedLocation(loc);
+                      setLocalError(null);
+                    }}
+                  />
+                </div>
 
                 {/* 2. Available Rooftop Area Input */}
-                <div>
+                <div {...fieldStage(1)}>
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
                     Available Rooftop Area (m²) <span className="text-rose-400">*</span>
                   </label>
@@ -182,7 +243,7 @@ export default function SolarDashboard() {
                 </div>
 
                 {/* Submit CTA Button & Cold-Start Notice */}
-                <div>
+                <div {...fieldStage(2)}>
                   <button
                     type="submit"
                     disabled={isSubmitting}
@@ -216,7 +277,14 @@ export default function SolarDashboard() {
           </div>
 
           {/* Right Column (7 Cols): Results, Monthly Chart & Subsidies */}
-          <div className="lg:col-span-7 flex flex-col gap-6">
+          <div
+            {...withStage(
+              'lg:col-span-7 flex flex-col gap-6',
+              'anim-stage-reveal-from-right',
+              '0.3s',
+              '0.6s'
+            )}
+          >
             {/* Assessment Result Card */}
             {assessmentResult ? (
               <ResultCard
@@ -316,10 +384,19 @@ export default function SolarDashboard() {
             </div>
 
             {/* Subsidies Panel */}
-            <SubsidyPanel
-              type="solar"
-              state={selectedLocation ? selectedLocation.state : ''}
-            />
+            <div
+              {...(shouldAnimate
+                ? {
+                    className: 'anim-stage-reveal',
+                    style: { animation: `stageReveal 0.5s ${EASING} 0.8s both` },
+                  }
+                : {})}
+            >
+              <SubsidyPanel
+                type="solar"
+                state={selectedLocation ? selectedLocation.state : ''}
+              />
+            </div>
           </div>
         </div>
       </main>

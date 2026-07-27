@@ -84,6 +84,71 @@
   animation: progressFill 3.6s linear forwards;
 }
 
+/* ========================================================
+   Staged Entrance Animation System
+   Used by LandingPage (session-gated) & Dashboards (every mount)
+   Each element sets --anim-delay and --anim-duration via inline style.
+   ======================================================== */
+
+/* Vertical slide-up + fade (hero elements, general staged reveal) */
+@keyframes stageReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Horizontal slide from left + fade (dashboard left panel) */
+@keyframes stageRevealFromLeft {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Horizontal slide from right + fade (dashboard right panel) */
+@keyframes stageRevealFromRight {
+  0% {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Background-specific fade + subtle scale-down (zoom settle) */
+@keyframes bgReveal {
+  0% {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Utility marker classes — initial hidden state only.
+   The actual `animation` property is set via inline style from JS
+   to avoid the var()-in-animation-shorthand browser parsing bug.
+   Keyframe definitions above are still referenced by name from JS. */
+.anim-stage-reveal,
+.anim-stage-reveal-from-left,
+.anim-stage-reveal-from-right,
+.anim-bg-reveal {
+  opacity: 0;
+}
+
 /* Respect user's system OS reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
   .animate-logo-entrance {
@@ -98,6 +163,14 @@
   .animate-progress-fill {
     animation: none !important;
     width: 100% !important;
+  }
+  .anim-stage-reveal,
+  .anim-stage-reveal-from-left,
+  .anim-stage-reveal-from-right,
+  .anim-bg-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
   }
 }
 

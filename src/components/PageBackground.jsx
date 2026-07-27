@@ -8,13 +8,41 @@ import React from 'react';
  * - DOES NOT use `background-attachment: fixed` which is broken on iOS Safari.
  * - Renders page content in a separate relative z-10 scrollable container.
  * - Supports smooth Ken Burns zoom animation for landing page (`motion=true`) while keeping dashboard backgrounds static (`motion=false`).
+ * - Supports optional entrance animation via `animateEntrance` prop with configurable delay/duration.
  */
 export default function PageBackground({
   image,
   motion = false,
   overlayOpacity = 0.30,
+  animateEntrance = false,
+  entranceDelay = '0s',
+  entranceDuration = '1s',
   children
 }) {
+  // Build className and inline style for the background image.
+  // When animateEntrance is true, the animation is set via inline style
+  // (not CSS class) to avoid var()-in-animation-shorthand browser bug.
+  const EASING = 'cubic-bezier(0.16, 1, 0.3, 1)';
+
+  const imgBaseClass = `h-full w-full object-cover object-center ${
+    motion && !animateEntrance ? 'animate-kenburns scale-100 origin-center' : 'scale-100'
+  }`;
+
+  // Build inline animation: bgReveal entrance, optionally chained with kenburns
+  let imgClass = imgBaseClass;
+  let imgStyle = undefined;
+
+  if (animateEntrance) {
+    imgClass = `${imgBaseClass} anim-bg-reveal`;
+    const entranceAnim = `bgReveal ${entranceDuration} ${EASING} ${entranceDelay} both`;
+    if (motion) {
+      // Chain: entrance reveal first, then Ken Burns continues after
+      imgStyle = { animation: `${entranceAnim}, kenburns 20s ease-in-out ${entranceDuration} infinite alternate` };
+    } else {
+      imgStyle = { animation: entranceAnim };
+    }
+  }
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden text-slate-100 selection:bg-sky-500 selection:text-white">
       {/* 1. Decoupled Fixed Full-Viewport Background Layer (-z-10) */}
@@ -28,9 +56,8 @@ export default function PageBackground({
           alt=""
           loading="eager"
           decoding="async"
-          className={`h-full w-full object-cover object-center transition-opacity duration-700 ease-in-out ${
-            motion ? 'animate-kenburns scale-100 origin-center' : 'scale-100'
-          }`}
+          className={imgClass}
+          style={imgStyle}
         />
         
         {/* Dark Tint Overlay with Tunable Opacity for Glass Contrast */}
