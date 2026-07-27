@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SplashScreen from './components/SplashScreen';
 import LandingPage from './pages/LandingPage';
 import RainwaterDashboard from './pages/RainwaterDashboard';
 import SolarDashboard from './pages/SolarDashboard';
+import api from './api';
 
 /**
  * Meghaditya Root Application Component
@@ -21,6 +22,16 @@ export default function App() {
     }
     return !sessionStorage.getItem('meghaditya_splash_shown');
   });
+
+  // Fallback backend warm-up ping if SplashScreen never mounts (repeat sessions / reduced motion)
+  useEffect(() => {
+    if (!sessionStorage.getItem('meghaditya_backend_pinged')) {
+      sessionStorage.setItem('meghaditya_backend_pinged', 'true');
+      api.get('/health').catch(() => {
+        // Silently ignore any warm-up ping failures
+      });
+    }
+  }, []);
 
   // Tracks whether the splash sequence has completed
   const [splashDone, setSplashDone] = useState(!showSplash);

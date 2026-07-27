@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import logo from '../assets/logo.png';
+import api from '../api';
 
 /**
  * SplashScreen Component
  * 
  * Renders a full-viewport splash overlay once per browser session.
  * - Uses sessionStorage ('meghaditya_splash_shown') to prevent re-display on route changes.
+ * - Fires an early background warm-up ping GET /health once per session ('meghaditya_backend_pinged').
  * - Displays animated logo entrance, gradient shimmer wordmark, and progress bar.
  * - Automatically fades out after ~2.8s to reveal the landing page.
  * - Fully respects 'prefers-reduced-motion' OS setting by skipping scale/shimmer effects.
@@ -19,6 +21,16 @@ export default function SplashScreen({ onComplete }) {
 
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+
+  // Early fire-and-forget backend warm-up ping on initial mount
+  useEffect(() => {
+    if (!sessionStorage.getItem('meghaditya_backend_pinged')) {
+      sessionStorage.setItem('meghaditya_backend_pinged', 'true');
+      api.get('/health').catch(() => {
+        // Silently ignore any warm-up ping failures
+      });
+    }
+  }, []);
 
   useEffect(() => {
     if (!isVisible) return;
